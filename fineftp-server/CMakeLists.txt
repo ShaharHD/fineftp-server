@@ -10,7 +10,9 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 find_package(Threads REQUIRED)
-find_package(asio REQUIRED)
+if (FINEFTP_SERVER_USE_BUILTIN_ASIO)
+    find_package(asio REQUIRED)
+endif()
 
 # Include GenerateExportHeader that will create export macros for us
 include(GenerateExportHeader)
@@ -64,17 +66,21 @@ generate_export_header(${PROJECT_NAME}
 
 add_library (fineftp::server ALIAS ${PROJECT_NAME})
 
-
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        Threads::Threads
-        $<$<BOOL:${WIN32}>:ws2_32>
-        $<$<BOOL:${WIN32}>:wsock32>
-
-        # Link header-only libs (asio & recycle) as described in this workaround:
-        # https://gitlab.kitware.com/cmake/cmake/-/issues/15415#note_633938
-        $<BUILD_INTERFACE:asio::asio>
+PRIVATE
+    Threads::Threads
+    $<$<BOOL:${WIN32}>:ws2_32>
+    $<$<BOOL:${WIN32}>:wsock32>
 )
+
+if (FINEFTP_SERVER_USE_BUILTIN_ASIO)
+  target_link_libraries(${PROJECT_NAME}
+  PRIVATE
+          # Link header-only libs (asio & recycle) as described in this workaround:
+          # https://gitlab.kitware.com/cmake/cmake/-/issues/15415#note_633938
+          $<BUILD_INTERFACE:asio::asio>
+  )
+endif()
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
